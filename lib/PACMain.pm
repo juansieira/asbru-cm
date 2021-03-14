@@ -1336,7 +1336,7 @@ sub _setupCallbacks {
 
             return 1;
         });
-        
+
     }
 
     # Capture mouse motion and show the connections list if the cursor is near the borders of the "info" panel
@@ -2816,6 +2816,30 @@ sub _treeConnections_menu {
             code => sub { $$self{_GUI}{connEditBtn}->clicked(); }
         });
     }
+    # Copy Connection Host
+    if ((defined($$self{_CFG}{environments}{$sel[0]}{'ip'}) && $$self{_CFG}{environments}{$sel[0]}{'ip'} ne '')) {
+        push(@tree_menu_items, {
+            label => 'Copy Host',
+            stockicon => 'gtk-copy',
+            shortcut => $PACMain::FUNCS{_KEYBINDS}->GetAccelerator('treeConnections','copy'),
+            sensitive => 1,
+            code => sub {
+                _copyHost($sel[0]);
+            }
+        });
+    }
+    # Copy Connection User
+    if ((defined($$self{_CFG}{environments}{$sel[0]}{'user'}) && $$self{_CFG}{environments}{$sel[0]}{'user'} ne '') || (defined($$self{_CFG}{environments}{$sel[0]}{'passphrase user'}) && $$self{_CFG}{environments}{$sel[0]}{'passphrase user'} ne '')) {
+        push(@tree_menu_items, {
+            label => 'Copy User',
+            stockicon => 'gtk-copy',
+            shortcut => $PACMain::FUNCS{_KEYBINDS}->GetAccelerator('treeConnections','copy'),
+            sensitive => 1,
+            code => sub {
+                _copyUser($sel[0]);
+            }
+        });
+    }
     # Copy Connection Password
     if ((defined($$self{_CFG}{environments}{$sel[0]}{'pass'}) && $$self{_CFG}{environments}{$sel[0]}{'pass'} ne '') || (defined($$self{_CFG}{environments}{$sel[0]}{'passphrase'}) && $$self{_CFG}{environments}{$sel[0]}{'passphrase'} ne '')) {
         push(@tree_menu_items, {
@@ -4024,7 +4048,7 @@ sub _showConnectionsList {
         $$self{_GUI}{main}->show_all();
         $$self{_CMDLINETRAY} = 2;
     }
-    
+
 
     # Do show the main window
     $$self{_GUI}{main}->present();

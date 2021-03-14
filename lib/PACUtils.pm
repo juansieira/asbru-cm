@@ -105,6 +105,8 @@ require Exporter;
     _vteFeedChild
     _vteFeedChildBinary
     _createBanner
+    _copyHost
+    _copyUser
     _copyPass
     _appName
     _setWindowPaintable
@@ -3835,6 +3837,42 @@ sub _createBanner {
     $banner->pack_start($text, 0, 1, 0);
 
     return $banner;
+}
+
+sub _copyHost {
+    my $uuid = shift;
+    my $cfg = $PACMain::FUNCS{_MAIN}{_CFG};
+    my $clip;
+
+    my $clipboard = Gtk3::Clipboard::get(Gtk3::Gdk::Atom::intern('PRIMARY', 0));
+    if ($$cfg{environments}{$uuid}{'ip'} ne '') {
+        $clip = $$cfg{environments}{$uuid}{'ip'};
+    }
+    if ($$cfg{'defaults'}{'keepass'}{'use_keepass'} && PACKeePass->isKeePassMask($clip)) {
+        my $kpxc = $PACMain::FUNCS{_KEEPASS};
+        $clip = $kpxc->applyMask($clip);
+    }
+    use bytes;
+    $clipboard->set_text($clip,length($clip));
+}
+
+sub _copyUser {
+    my $uuid = shift;
+    my $cfg = $PACMain::FUNCS{_MAIN}{_CFG};
+    my $clip;
+
+    my $clipboard = Gtk3::Clipboard::get(Gtk3::Gdk::Atom::intern('PRIMARY', 0));
+    if ($$cfg{environments}{$uuid}{'passphrase user'} ne '') {
+        $clip = $$cfg{environments}{$uuid}{'passphrase user'};
+    } else {
+        $clip = $$cfg{environments}{$uuid}{'user'};
+    }
+    if ($$cfg{'defaults'}{'keepass'}{'use_keepass'} && PACKeePass->isKeePassMask($clip)) {
+        my $kpxc = $PACMain::FUNCS{_KEEPASS};
+        $clip = $kpxc->applyMask($clip);
+    }
+    use bytes;
+    $clipboard->set_text($clip,length($clip));
 }
 
 sub _copyPass {
