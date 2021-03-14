@@ -2762,6 +2762,20 @@ sub _treeConnections_menu {
 
     my @tree_menu_items;
 
+    # Open filezilla
+    push(@tree_menu_items, {
+        label => "SFTP with Filezilla$p",
+        stockicon => 'gtk-open',
+        shortcut => $PACMain::FUNCS{_KEYBINDS}->GetAccelerator('treeConnections','filezilla'),
+        sensitive => scalar(@sel) == 1 && $sel[0] ne '__PAC__ROOT__' && !$protected_parent,
+        code => sub {
+            $self->_startFilezilla($sel[0]);
+        }
+    });
+
+    # Separator
+    push(@tree_menu_items, { separator => 1 });
+
     # Show keyboard shortcuts
     push(@tree_menu_items, {
         label => "Show Keybindings",
@@ -2995,6 +3009,7 @@ sub _treeConnections_menu {
             $self->_cloneNodes();
         }
     });
+
     # Copy
     push(@tree_menu_items, {
         label => "Copy node$p",
@@ -4105,6 +4120,68 @@ sub _copyNodes {
     }
     foreach my $sel (@{ $sel_uuids }) {
         $self->__dupNodes($parent, $sel, $$self{_COPY}{'data'}, $cut);
+    }
+
+    return 1;
+}
+
+sub _startFilezilla {
+    my $self = shift;
+    my $uuid = shift;
+    my $cfg = $PACMain::FUNCS{_MAIN}{_CFG};
+    my $method;
+    my $host;
+    my $user;
+    my $password;
+    my $port;
+    my $publickey;
+
+    # Method
+    $method = $$cfg{environments}{$uuid}{method};
+    unless ( $method ~~ ['FTP', 'SSH', 'SFTP'] ){
+        return _wMessage($$self{_GUI}{main}, "Incompatible type of connection ($method).\n\nThis feature can only be used with FTP, SSH or SFTP connecitons.");
+    }
+
+    # User
+    if ($$cfg{environments}{$uuid}{'passphrase user'} ne '') {
+        $user = $$cfg{environments}{$uuid}{'passphrase user'};
+    } else {
+        $user = $$cfg{environments}{$uuid}{'user'};
+    }
+
+    # Password
+    if ($$cfg{environments}{$uuid}{'passphrase'} ne '') {
+        $password = $$cfg{environments}{$uuid}{'passphrase'};
+    } else {
+        $password = $$cfg{environments}{$uuid}{'pass'};
+    }
+    if ($$cfg{'defaults'}{'keepass'}{'use_keepass'} && PACKeePass->isKeePassMask($password)) {
+        my $kpxc = $PACMain::FUNCS{_KEEPASS};
+        $password = $kpxc->applyMask($password);
+    }
+
+    # Public key
+    $publickey = $$cfg{environments}{$uuid}{'public key'};
+
+    # Host
+    $host = $$cfg{environments}{$uuid}{ip};
+
+    # Port
+    $port = $$cfg{environments}{$uuid}{port};
+
+    if ($host && $user && $port && ($password || $publickey)){
+        my $check = `sh -c 'command -v filezilla'`;
+        unless ($check){
+            return _wMessage($$self{_GUI}{main}, "Check if Filezilla is installed in your system.");
+        }else{
+            if ($password){
+                system(" filezilla sftp://".$user. ":\"". $password . "\"@" . $host . ":". $port . "&" );
+            }else{
+                return _wMessage($$self{_GUI}{main}, "Cannot open filezilla with public key.");
+            }
+        }
+    }else{
+        return _wMessage($$self{_GUI}{main}, "Please check your connection data:\n\n- Host\n- User\n- Port");
     }
 
     return 1;
